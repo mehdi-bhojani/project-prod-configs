@@ -24,7 +24,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik.staging.yml:/etc/traefik/traefik.yml:ro
       - ./dynamic:/etc/traefik/dynamic:ro
-      - acme-data:/etc/traefik           # persists Let's Encrypt certs
+      # - acme-data:/etc/traefik           # persists Let's Encrypt certs
       - traefik-logs:/var/log/traefik
     networks:
       - proxy
