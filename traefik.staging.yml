@@ -1,0 +1,30 @@
+api:
+  dashboard: true
+
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+# certificatesResolvers:
+#   letsencrypt:
+#     acme:
+#       httpChallenge:
+#         entryPoint: web
+#       email: admin@example.com           # ← change me
+#       storage: /etc/traefik/acme.json
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false              # only containers with traefik.enable=true
+    network: proxy
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+
+log:
+  level: INFO
+
+accessLog: {}

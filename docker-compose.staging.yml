@@ -1,0 +1,54 @@
+networks:
+  proxy:
+    name: proxy
+    driver: bridge
+  internal:
+    name: internal
+    driver: bridge
+
+volumes:
+  # acme-data:
+  traefik-logs:
+  jenkins-data:
+
+services:
+  traefik:
+    image: traefik:v2.11
+    container_name: projects-traefik-staging
+    restart: unless-stopped
+    ports:
+      - "80:80"        # HTTP (auto-redirects to HTTPS)
+      - "443:443"      # HTTPS
+      - "8080:8080"    # Traefik dashboard (internal only — protect via firewall)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.staging.yml:/etc/traefik/traefik.yml:ro
+      - ./dynamic:/etc/traefik/dynamic:ro
+      - acme-data:/etc/traefik           # persists Let's Encrypt certs
+      - traefik-logs:/var/log/traefik
+    networks:
+      - proxy
+    command:
+      - '--api.insecure=false'
+      - '--api.dashboard=true'
+      - '--providers.docker=true'
+      - '--providers.docker.exposedbydefault=false'
+      - '--providers.docker.network=proxy'
+      - '--entrypoints.web.address=:80'
+      - '--entrypoints.websecure.address=:443'
+      # - '--entrypoints.web.http.redirections.entryPoint.to=websecure'
+      # - '--entrypoints.web.http.redirections.entryPoint.scheme=https'
+      # - '--certificatesresolvers.letsencrypt.acme.httpchallenge=true'
+      # - '--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web'
+      # - '--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@example.com}'
+      # - '--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json'
+      - '--log.level=INFO'
+      - '--accesslog=true'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      # Traefik's own dashboard
+      - "traefik.http.routers.traefik-dash.rule=Host(`traefik.local`)"
+      - "traefik.http.routers.traefik-dash.entrypoints=websecure"
+      # - "traefik.http.routers.traefik-dash.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik-dash.service=api@internal"
