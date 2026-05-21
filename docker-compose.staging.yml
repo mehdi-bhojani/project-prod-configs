@@ -52,3 +52,44 @@ services:
       - "traefik.http.routers.traefik-dash.entrypoints=websecure"
       # - "traefik.http.routers.traefik-dash.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik-dash.service=api@internal"
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: projects-jenkins-staging
+    restart: unless-stopped
+    user: root                           # to use host docker.sock without UID juggling
+    environment:
+      - JAVA_OPTS=-Xmx1g -Xms512m -Duser.timezone=Asia/Karachi
+      - TZ=Asia/Karachi
+      - JENKINS_OPTS=--prefix=/
+    # ports:
+      # - "3095:8080"                      # web UI (also reachable directly if needed)
+      # - "50000:50000"                    # inbound agent port
+    volumes:
+      - jenkins-data:/var/jenkins_home   # Jenkins config/jobs/secrets persistence
+      - /var/run/docker.sock:/var/run/docker.sock                          # control host Docker
+      - /usr/bin/docker:/usr/bin/docker                                     # docker CLI from host
+      - /usr/libexec/docker/cli-plugins:/usr/libexec/docker/cli-plugins:ro  # docker compose plugin
+      - /home/developer/project:/projects                                # project tree
+      - /etc/localtime:/etc/localtime:ro                                    # match host clock
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - proxy
+      - internal
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/login']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+
+      - "traefik.http.routers.jenkins.rule=Host(`jenkins.local`)"
+      - "traefik.http.routers.jenkins.entrypoints=web"
+      - "traefik.http.services.jenkins.loadbalancer.server.port=8080"
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 1024M
