@@ -49,7 +49,7 @@ services:
       - "traefik.docker.network=proxy"
       # Traefik's own dashboard
       - "traefik.http.routers.traefik-dash.rule=Host(`traefik.local`)"
-      - "traefik.http.routers.traefik-dash.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dash.entrypoints=web"
       # - "traefik.http.routers.traefik-dash.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik-dash.service=api@internal"
 
